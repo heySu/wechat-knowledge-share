@@ -180,7 +180,7 @@ wechat-knowledge-share/
 ## 测试与自检
 
 ```bash
-node --test "test/**/*.test.js"   # 端到端测试
+npm test                          # 端到端测试
 npm run doctor                    # 检查 PUBLIC_BASE_URL 是否能完成公众号握手
 npm run doctor https://你的域名     # 指定地址自检
 ```

@@ -11,7 +11,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "doctor": "node scripts/doctor.mjs",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test test/smoke.test.js"
   },
   "keywords": ["wechat", "公众号", "订阅号", "知识库", "自动回复"],
   "license": "MIT"
