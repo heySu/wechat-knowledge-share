@@ -1,0 +1,18 @@
+{
+  "name": "wechat-knowledge-share",
+  "version": "1.0.0",
+  "private": true,
+  "description": "零依赖的微信订阅号知识分享后台：知识库、关键词自动回复、每日定时推送、自定义菜单、网页管理后台",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "doctor": "node scripts/doctor.mjs",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "keywords": ["wechat", "公众号", "订阅号", "知识库", "自动回复"],
+  "license": "MIT"
+}
