@@ -1,0 +1,64 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>学习笔记 ｜ 11 月 5 日 · 怎么证明它变好了</title>
+<style>
+body{margin:0;background:#f2f3f5;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
+.phone{max-width:420px;margin:0 auto;background:#fff;min-height:100vh;padding:22px 20px 40px;box-sizing:border-box;}
+.meta{font-size:13px;color:#8a8a8a;margin-bottom:6px}
+h1{font-size:22px;line-height:1.5;margin:0 0 6px}
+</style></head><body><div class="phone">
+<p class="meta">知识小站</p>
+<h1>学习笔记 ｜ 11 月 5 日 · 怎么证明它变好了</h1>
+<section style="padding:2px 0 8px;"><p style="margin:0 0 6px;font-size:13px;color:#8a8a8a;">知识小站 · Agent 学习笔记 06</p><p style="margin:0 0 22px;font-size:15px;line-height:1.8;color:#666;">「感觉这次好多了」不是结论。约 2000 字，读完 6 分钟；第 3 节有可以直接抄的任务集结构。</p></section><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">01 / 问题</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">「感觉这次好多了」不是结论</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">前五期讲完了结构与上线，剩下最后一块：怎么证明一次改动是变好还是变坏。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">大多数人靠感觉：试几个例子，觉得顺了，就发布。这条路有三个坑：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">只看个例</strong>：拿一个刚调好的例子验证，当然通过。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">只测简单任务</strong>：复杂的、需要澄清的、注定失败的那批，从来没进过测试。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">基线不一致</strong>：两次对比，温度不同、工具版本不同、连任务都换了。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">结论就是：<strong style="font-weight:700;color:#111;">没有固定任务集的改动，本质上是在赌。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">今天讲三件事：怎么定指标、怎么建任务集、怎么判断掉点归谁。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">02 / 指标</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">先定指标，别急着跑</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">指标至少分三层，混在一起看会得出错误结论：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">单步</strong>：给固定上下文，它选的工具和参数对不对。最便宜，最能定位。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">任务</strong>：端到端成功率、平均步数、平均成本。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">业务</strong>：用户有没有采纳、有没有返工、有没有投诉。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">这里有个常被忽略的点：<strong style="font-weight:700;color:#111;">看分布，不要只看平均。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">平均成功率 80% 听起来不错，但如果失败的 20% 全部集中在「带附件的邮件」这一类，那这个 Agent 对这类用户就是不可用的。所以报表里至少要有三样：成功率、P95 延迟、失败任务的类型分布。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">还有一个细节：单次成功不代表稳定。同一个任务跑五次，成功几次？这个数字（pass@5 或 5 次取多数）比单次结果诚实得多。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">03 / 任务集</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">二十条真实任务，胜过两百条编的</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">任务集最容易犯的错，是自己坐在那编。编出来的任务又干净又典型，跑分很好看，上线就崩。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">正确做法是从真实日志里采样，按类型分层：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">简单</strong>：一步能完成的，考基本功。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">多步</strong>：有依赖、要按顺序来的，考规划。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">需要澄清</strong>：信息不全、必须追问的，考分寸。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">注定失败</strong>：无解的，考它会不会及时放弃。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">数量不用多，20 到 50 条就够。关键是每条都要有<strong style="font-weight:700;color:#111;">判定标准</strong>，而不是「标准答案」。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">一条任务长这样：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">id      T-014
+输入    上周的 12 个素材文件
+必须    三段齐全 / 每条 ≤40 字
+必须    不含素材之外的事实
+禁止    出现「已完成」但素材没有
+判定    规则 + 人工抽查</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">「必须」和「禁止」这两栏是重点。写清楚它们，判定才能自动化；只写「输出一份好周报」，就只能靠人一次次读。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">04 / 判定</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">谁来判对错：规则、裁判、人</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">三种判定方式，成本从低到高：</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">规则判定。</strong> 字数、格式、必含字段、禁用词，全部能用代码判。能规则化的，绝不要用模型——又快又稳。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">模型当裁判。</strong> 开放式输出只能靠它，但要防三个已知偏差：位置偏差（更偏爱第一个）、长度偏差（更偏爱长的）、自恋偏差（更偏爱自己家模型写的）。对策是打乱顺序、成对比较、给明确的评分维度。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">人工抽查。</strong> 不用全看，按类型抽 10%，专挑失败的和边界情况看。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">一个务实的组合：<strong style="font-weight:700;color:#111;">规则兜底 + 裁判打分 + 人工抽检</strong>。三层都过了，才算这条任务通过。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">05 / 回归</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">跑分要能归因，不然只是热闹</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">每次改动都跑同一套任务集，输出一份对比：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">v3  20 条  3 次取多数
+
+成功率   16/20 → 17/20   +1
+平均步数  6.2  → 5.8     -0.4
+平均成本  0.31 → 0.24 元  -23%
+失败集中  T-007 / T-013</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">看这份表，先问三个问题：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">涨的是哪几条？</strong> 如果只涨了一条，很可能是运气，不是改进。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">跌的是哪几条？</strong> 掉点集中在同一类任务，说明改动碰到了那类任务的假设。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">成本降了，成功率没掉吗？</strong> 掉了就是拿质量换钱。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">归因也要固定顺序：先看是不是模型换了，再看提示词，最后看工具。三者混在一起改，掉点了你也不知道该退哪个。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">还有个工程细节：<strong style="font-weight:700;color:#111;">温度设 0 也不保证完全一样</strong>（硬件和并行计算会带来微小差异）。所以关键结论要跑三次取多数，别拿单次结果下判断。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">06 / 动手</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">给周报 Agent 建一套最小评测</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">三步，半天能做完：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">攒 20 条任务</strong>：从过去两周的真实素材里挑，覆盖四类。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">写判定</strong>：能用规则的用规则（三段、40 字、禁用词），判不了的列成人工检查项。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">写个跑分脚本</strong>：读任务集 → 逐条跑 → 记录结果 → 输出对比表。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">跑分脚本不需要框架，一个 JSON 任务文件加一个循环就够：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">for task in tasks:
+    out = run_agent(task.input)
+    score = rule_check(out) + judge(out)
+    record(task.id, score, tokens, ms)
+report(baseline, current)</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">从今天起，任何改动都跑一遍。跑不动的时候，就说明你的任务集太重了——减到 20 条，不要减到 0 条。</p>
+<h3 style="font-size:18px;font-weight:700;line-height:1.5;margin:26px 0 10px;color:#111;">今日三句话</h3>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">评测集是 Agent 的护栏；没有它，每次改动都是在赌。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">20 条真实任务 + 明确判定标准</strong>，胜过 200 条编出来的样例。</li><li style="margin:0 0 6px;">看分布不看平均；掉点要能归因到模型、提示词或工具，混着改等于没改。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">明日预告</strong>：六期收尾——把这条线画成一张能贴在墙上的地图。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">互动</strong>：你现在怎么判断一次改动是不是变好了？回「评测」，把这期的任务集模板发你。</p></section><hr style="border:none;border-top:1px solid #eee;margin:28px 0 18px;"><p style="margin:0;font-size:13px;line-height:1.9;color:#9a9a9a;">喜欢今天的内容，点个「在看」；回复「agent」可以随时取回这一期的完整清单。<br>—— 知识小站　每日一篇，把 Agent 拆开看</p>
+</div></body></html>

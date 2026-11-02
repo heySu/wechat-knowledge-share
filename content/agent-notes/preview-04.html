@@ -1,0 +1,63 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>学习笔记 ｜ 11 月 3 日 · Agent 的成本账</title>
+<style>
+body{margin:0;background:#f2f3f5;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
+.phone{max-width:420px;margin:0 auto;background:#fff;min-height:100vh;padding:22px 20px 40px;box-sizing:border-box;}
+.meta{font-size:13px;color:#8a8a8a;margin-bottom:6px}
+h1{font-size:22px;line-height:1.5;margin:0 0 6px}
+</style></head><body><div class="phone">
+<p class="meta">知识小站</p>
+<h1>学习笔记 ｜ 11 月 3 日 · Agent 的成本账</h1>
+<section style="padding:2px 0 8px;"><p style="margin:0 0 6px;font-size:13px;color:#8a8a8a;">知识小站 · Agent 学习笔记 04</p><p style="margin:0 0 22px;font-size:15px;line-height:1.8;color:#666;">同一个任务，有人花 2 分，有人花 2 块。约 2000 字，读完 5 分钟；第 6 节有一个可以直接用的记账方式。</p></section><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">01 / 问题</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">同一个任务，为什么有人花 2 分，有人花 2 块</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">单次问答的成本很好算：输入长度乘以单价，一眼就能估出来。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">Agent 不是一次请求，是 n 次请求。而且第 n 次请求，要把前面 n-1 次的历史重新读一遍。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">这带来一个不太直觉的结果：<strong style="font-weight:700;color:#111;">步数翻倍，成本接近翻四倍。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">所以「贵」通常不是单价贵，是结构贵。今天把账拆开算，再说三处最该省的地方。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">02 / 拆账</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">先把账算明白：成本 ≈ 步数 × 每步上下文</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">拿一组假设数（只是量级演示，不是任何一家的报价）：基础上下文 2000 token，每步新增 800 token。</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">第 1 步输入    2,800
+第 10 步输入   9,200
+第 20 步输入  17,200
+累计输入     192,000
+
+一次性问答     2,800
+倍数           约 69 倍</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">同一个任务，如果步数从 20 变成 40：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">20 步累计    192,000
+40 步累计    704,000
+步数 ×2，成本 ×3.7</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">结论很清楚：<strong style="font-weight:700;color:#111;">成本对「步数」是平方敏感的，对「每步新增多少」是线性敏感的。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">由此得到一个优化顺序的判断：加步数省钱最快，但也最容易牺牲成功率；压上下文慢一些，但更安全。所以先压上下文，再谨慎砍步数。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">03 / 省一</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">第一处：重复的前缀，别每次都付全价</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">系统提示、工具定义、固定示例，这几样在每一步里都一模一样，通常占每步输入的 30%-50%。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">也就是说，你有一半的钱，花在「把同一段话重复读二十遍」上。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">现在的模型基本都支持提示缓存（prefix caching）：前缀不变的部分，命中缓存后按大幅折扣计费。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">用好的关键只有一句话：<strong style="font-weight:700;color:#111;">让前缀稳定。</strong></p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">不变的放前面：系统提示、工具清单、格式要求。</li><li style="margin:0 0 6px;">会变的放后面：用户这次的问题、检索结果、时间戳。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">时间戳、随机 id、用户昵称不要放在开头</strong>——它们每轮都变，会让整段缓存直接失效。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">一个真实事故：有人在系统提示第一行写了「现在是 2026-11-03 14:22」，缓存命中率从此归零，成本翻了三倍，而他从头到尾没觉得那句话有什么问题。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">04 / 省二</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">第二处：能一次做完的，别放进循环</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">判断标准只有一条：<strong style="font-weight:700;color:#111;">这一步需不需要「看上一步的结果」才能决定？</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">不需要，就不要进循环。三个具体做法：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">并行</strong>：没有依赖的工具调用，一次性发出去，不要排队。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">批量</strong>：十个小请求合成一个大请求，往返次数立刻降一个数量级。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">路由</strong>：先分类，再决定走哪条链路，避免让主链路做它不该做的事。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">反例很常见：让 Agent 一步一步读二十个文件。如果总量放得下，一次调用全部读进来就行——二十轮对话的开销，比一次大输入贵得多。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">还有一条容易忽略：<strong style="font-weight:700;color:#111;">早停。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">模型有过度确认的倾向，做完之后总想「再检查一遍」。检查本身没错，但每检查一轮，就是把全部历史再读一遍。给一个明确的完成判据，比让它自己感觉「差不多了」便宜得多。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">05 / 省三</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">第三处：不是所有步骤都值得用最贵的模型</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">一个任务里的步骤，难度分布是很不均匀的：八成是机械活（分类、抽取、格式转换），两成需要判断（规划、取舍、异常处理）。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">全都用最贵的模型，等于给那八成机械活付了溢价。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">分级思路：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">路由与分类</strong>：最便宜的模型，甚至规则。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">规划与难例</strong>：强模型，只在真正需要的时候用。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">校验</strong>：规则优先，规则覆盖不到的再上模型。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">还有一个成本陷阱：<strong style="font-weight:700;color:#111;">重试。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">一次失败重试，约等于把这一段再跑一遍。失败率高的步骤，先修它，别急着换更贵的模型——换个模型可能只是把失败变成「更贵的失败」。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">最后别忘了延迟：用户等 40 秒和等 4 秒，是两种产品。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">06 / 动手</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">给周报 Agent 记一笔账</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">不记账就没法优化。最少记三个字段：每步的输入、输出、耗时。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">一行一步，追加到 <code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">runs.jsonl</code>：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">step 7   read_file
+in 4120  out 260  cached 3600  830ms</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">跑完统计三个数：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">总 token</strong>：这次任务到底花了多少。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">最贵的一步</strong>：通常不是最后一步，而是某次检索把八千字塞进了上下文。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">缓存命中率</strong>：低于 50% 就说明前缀不稳定，先修这个，收益最大。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">优化顺序固定成三步，不要跳：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">最贵的那一步，是不是必要的？能不能并进别的步骤？</li><li style="margin:0 0 6px;">缓存命中率够不够高？前缀里有没有会变的东西？</li><li style="margin:0 0 6px;">最后才考虑换模型、降规格。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">验收标准也只有一条：<strong style="font-weight:700;color:#111;">成本降下来，成功率没掉。</strong> 掉点的优化不算优化，只是把成本换成了返工。</p>
+<h3 style="font-size:18px;font-weight:700;line-height:1.5;margin:26px 0 10px;color:#111;">今日三句话</h3>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">Agent 的成本是平方量级——每一步都要把前面的历史重新读一遍。</li><li style="margin:0 0 6px;">最该省的三处：<strong style="font-weight:700;color:#111;">稳定的前缀</strong>（缓存）、<strong style="font-weight:700;color:#111;">不必要的步数</strong>（并行与早停）、<strong style="font-weight:700;color:#111;">机械活用便宜模型</strong>（分级）。</li><li style="margin:0 0 6px;">先记账再优化；没有每步 token 统计的优化，都是猜。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">明日预告</strong>：从 demo 到上线——权限、审计、灰度，三件上线前必须补的事。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">互动</strong>：你的 Agent 跑一次任务大概花多少？回「成本」，把这期的记账模板发你。</p></section><hr style="border:none;border-top:1px solid #eee;margin:28px 0 18px;"><p style="margin:0;font-size:13px;line-height:1.9;color:#9a9a9a;">喜欢今天的内容，点个「在看」；回复「agent」可以随时取回这一期的完整清单。<br>—— 知识小站　每日一篇，把 Agent 拆开看</p>
+</div></body></html>

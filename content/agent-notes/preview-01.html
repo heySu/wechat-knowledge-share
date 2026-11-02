@@ -1,0 +1,109 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>学习笔记 ｜ 10 月 31 日 · 把 Agent 拆开看</title>
+<style>
+body{margin:0;background:#f2f3f5;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
+.phone{max-width:420px;margin:0 auto;background:#fff;min-height:100vh;padding:22px 20px 40px;box-sizing:border-box;}
+.meta{font-size:13px;color:#8a8a8a;margin-bottom:6px}
+h1{font-size:22px;line-height:1.5;margin:0 0 6px}
+</style></head><body><div class="phone">
+<p class="meta">知识小站</p>
+<h1>学习笔记 ｜ 10 月 31 日 · 把 Agent 拆开看</h1>
+<section style="padding:2px 0 8px;"><p style="margin:0 0 6px;font-size:13px;color:#8a8a8a;">知识小站 · Agent 学习笔记 01</p><p style="margin:0 0 22px;font-size:15px;line-height:1.8;color:#666;">今天只讲一件事：Agent 凭什么能自己把事干完。约 3200 字，读完 8 分钟；赶时间可以先看文末的「今日三句话」。</p></section><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">01 / 认知</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">能自己决定下一步的，才叫 Agent</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">先给一个能落地的定义：</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">Agent 是一个能观察环境、自己决定下一步、调用工具改变环境，并循环到目标完成的系统。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">拆开就是四个零件：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">模型</strong>：负责「接下来该做什么」的判断。它不是知识库，是决策者。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">工具</strong>：把判断变成动作——检索、算数、调接口、写文件。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">记忆</strong>：短期是上下文，长期是外部存储。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">循环</strong>：决定「再来一次」还是「到此为止」。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">判断一个东西是不是 Agent，不用看它有多少工具，只看一件事：<strong style="font-weight:700;color:#111;">下一步由谁决定。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">普通对话是「你问一句，它答一句」，每一步都在你手里；Agent 是「你给一个目标，它自己排步骤」，中间的决定权交出去了。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">所以那种「聊天框加三个插件、但每次都要你点名调用」的产品，本质还是带工具的聊天，不是 Agent。</p>
+<blockquote style="margin:0 0 18px;padding:12px 16px;border-left:3px solid #07c160;background:#f5fbf7;color:#4c5a52;font-size:15px;line-height:1.85;border-radius:4px;">Agent 的门槛不是会不会用工具，而是会不会自己判断：下一步该用哪个工具。</blockquote></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">02 / 机制</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">一次 ReAct 循环，转的到底是什么</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">ReAct（Reasoning + Acting）是 2022 年提出的一种思路：让模型把「想一想」和「做一下」交替进行，用工具返回的真实结果，去纠正自己脑子里的推理。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">骨架不到二十行：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">目标   = 用户的话
+上下文 = [系统提示, 工具清单, 历史]
+
+loop:
+    思考 = 模型(上下文)     # 还缺什么？
+    if 思考.类型 == &quot;回答&quot;:
+        return 思考.内容
+
+    结果 = 执行(工具, 参数)  # 真动作
+    上下文 += [思考, 结果]   # 回填</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">拿一个小任务走一遍——「查一下明天北京天气，下雨就提醒我带伞」：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">观察</strong>：目标里其实有两个动作，查天气、按条件提醒。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">思考</strong>：先调天气工具，日期是「明天」。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">行动</strong>：<code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">weather(city=&quot;北京&quot;, date=&quot;tomorrow&quot;)</code></li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">观察</strong>：<code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">{&quot;condition&quot;:&quot;小雨&quot;,&quot;temp&quot;:&quot;12-18℃&quot;}</code></li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">思考</strong>：命中「下雨」条件，创建提醒。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">行动</strong>：<code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">reminder.create(time=&quot;07:30&quot;, text=&quot;带伞&quot;)</code></li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">回答</strong>：明天北京小雨，12-18℃，已设好 7:30 的提醒。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">看起来顺理成章，但真做起来，翻车基本都在这三个地方：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">观察要结构化</strong>。工具返回 <code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">{&quot;ok&quot;:true,...}</code>，比返回「查询成功！结果如下：……」好处理一百倍。自然语言的结果，模型每次解析都可能不一样。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">停止条件要显式</strong>。最大步数、token 预算、连续两轮没有新信息就停。没有刹车片的循环，一定会跑到预算烧完为止。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">失败要能回退</strong>。工具报错时，把错误原文喂回模型让它改参数，而不是直接抛异常把整个任务中断。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">第二点尤其容易被忽略：<strong style="font-weight:700;color:#111;">Agent 最难的不是想得聪明，是停得下来。</strong></p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">03 / 上下文</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">Agent 九成的问题，最后都落在上下文上</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">很多人以为 Agent 效果差是模型不行，实际排查下来，多半是上下文塞坏了。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">有个被反复验证的现象：关键信息放在长上下文的中段时，最容易被忽略（业界叫「lost in the middle」）。也就是说，<strong style="font-weight:700;color:#111;">窗口大不等于好用</strong>，塞得越满，注意力越稀释。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">我给自己的项目定过一份粗略预算，供参考：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">系统提示与规则：10%-15%</li><li style="margin:0 0 6px;">工具定义：10% 左右</li><li style="margin:0 0 6px;">记忆与资料：30%</li><li style="margin:0 0 6px;">工具返回结果：30%</li><li style="margin:0 0 6px;">留白：至少 15%</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">超了就先砍工具结果，再砍历史，绝不动系统提示。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">三种典型的坏味道：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">腐烂</strong>：十几轮之后，第一轮定下的关键约束被后来的日志埋了，模型开始「忘记」要求。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">淹没</strong>：一次检索返回八千字，模型只用了第一段，剩下全是浪费。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">漂移</strong>：中途冒出一个子任务，主干目标被悄悄带跑，最后交回来一个跑偏的答案。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">对应的三个对策，按性价比排序：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">摘要压缩</strong>：每 N 轮把历史压成「已确认的事实 + 待办 + 约束」三块，原始消息丢掉。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">外部化</strong>：中间产物写进文件或变量，上下文里只留一句「完整结果在 result.md」。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">隔离</strong>：子任务丢给子 Agent，只把结论带回来，过程不要污染主上下文。</li></ul>
+<blockquote style="margin:0 0 18px;padding:12px 16px;border-left:3px solid #07c160;background:#f5fbf7;color:#4c5a52;font-size:15px;line-height:1.85;border-radius:4px;">上下文是工作台，不是仓库。工作台乱了，手就慢了。</blockquote></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">04 / 工具</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">工具是写给模型看的 API</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">人写 API 追求复用，模型用 API 靠的是「读懂」。所以工具设计的第一原则不是抽象得多漂亮，而是<strong style="font-weight:700;color:#111;">能不能被准确理解</strong>。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">四条标准，按重要性排：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">单一职责</strong>。一个工具只做一件事。<code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">get_user</code> 和 <code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">update_user</code> 分开，别做成 <code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">user(action)</code> 这种万能入口——模型会在参数上反复试错。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">名字自解释</strong>。<code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">search_orders_by_phone</code> 永远好过 <code style="background:#f2f3f5;color:#c7254e;padding:2px 5px;border-radius:4px;font-size:14px;font-family:Menlo,Consolas,monospace;">query2</code>。名字本身就是提示词。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">返回可读</strong>。字段名带语义，给模型的版本可以砍掉给前端用的冗余字段。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">失败可恢复</strong>。错误信息要告诉模型：哪里错了、可以怎么改。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">同一个需求，两种写法：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text"># 坏：参数是一个自由字符串，模型只能猜
+run_sql(sql: string)
+
+# 好：类型、枚举、上限都写明
+search_orders(
+  phone: string,        # 11 位手机号
+  status?: &quot;paid&quot; | &quot;shipped&quot;,
+  limit?: number = 20   # 上限 100
+)</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">错误信息的差别更明显：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text"># 坏
+Error: 400
+
+# 好
+Error: phone 必须是 11 位数字，收到 8 位。
+请向用户确认完整手机号后重试。</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">后一种，模型自己就能改对；前一种，它只能瞎猜或者放弃。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">工具描述就是模型的说明书。你写得含糊，它就用得含糊——这条在工具变多的时候会指数级放大，这也是为什么工具接口正在标准化（比如 MCP）。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">05 / 记忆</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">该记什么，该忘什么</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">Agent 的记忆分三层，用途完全不同：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">工作记忆</strong>：就是上下文，一次任务用完即弃。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">情节记忆</strong>：过去发生过什么——这次任务的结论、用户的偏好。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">程序记忆</strong>：一件事怎么做成的——可复用的步骤、踩过的坑。</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">大多数产品只做了第一层，所以每次都要重新交代一遍背景。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">判断一条信息该不该写进长期记忆，我只有一个标准：<strong style="font-weight:700;color:#111;">下次还会用到，而且不写就会重复犯错。</strong></p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">该写的：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">用户稳定的偏好（「回答不要用表情符号」）</li><li style="margin:0 0 6px;">已经确认过的结论（「这个客户的结算周期是 60 天」）</li><li style="margin:0 0 6px;">失败过的路径（「用 A 接口查不到历史订单，要换 B」）</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">不该写的：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">原始工具返回（体积大、时效短）</li><li style="margin:0 0 6px;">中间推理过程（下次的推理未必一样）</li><li style="margin:0 0 6px;">一次性临时变量</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">还有一点常被忽略：<strong style="font-weight:700;color:#111;">记忆要有过期机制</strong>。每条带时间戳，读取时优先近期，冲突时以新的为准。没有过期的记忆，会慢慢变成一堆互相矛盾的旧事实。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">06 / 评估</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">怎么知道它真的变强了</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">「感觉这次回答好多了」不是评估，是错觉。至少分三层看：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">单步</strong>：给固定的上下文，它选的工具和参数对不对。这一层最便宜，也最能定位问题。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">任务</strong>：20 条真实任务，看端到端成功率、平均步数、平均成本。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">回归</strong>：每次改提示词、换模型，跑同一套任务集，看有没有掉点。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">任务集不用大，20 条就够，但要覆盖四类：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">一步就能做完的（考基本功）</li><li style="margin:0 0 6px;">需要多步、有依赖的（考规划）</li><li style="margin:0 0 6px;">信息不全、需要追问的（考分寸）</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">注定失败的</strong>（考它会不会及时放弃，而不是硬编一个答案）</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">最后一条最能暴露问题。很多 Agent 在无解任务上不会说「做不到」，而是编一个看起来合理的结论。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">评估时看 trace，不要只看答案。答案对了但路径乱七八糟，下次换个任务就会错；答案错了但路径合理，往往只需补一个工具或一条规则。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">四个必看指标：成功率、步数、token 消耗、人工介入次数。前两个看能力，后两个看成本。</p></section><hr style="border:none;border-top:1px dashed #e6e6e6;margin:28px 0;"><section style="margin:0 0 26px;"><p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#07c160;font-weight:700;">07 / 动手</p><h2 style="font-size:20px;font-weight:700;line-height:1.5;margin:30px 0 12px;color:#111;">30 分钟，做一个只会做一件事的周报 Agent</h2>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">选周报，是因为它输入稳定、步骤固定、做错了也无害——非常适合第一次动手。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">材料</strong>：一周的 git log、待办清单、会议纪要，全放进一个文件夹。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">三步走，顺序别反</strong>：</p>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">先写死流程，不写 Agent</strong>。列清单 → 读文件 → 分类 → 写三段。手工跑通一遍，确认输出是你想要的。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">再把「分类」这一步交给模型</strong>，给它固定的输出格式。</li><li style="margin:0 0 6px;"><strong style="font-weight:700;color:#111;">最后才加工具循环</strong>，允许它自己决定读哪个文件。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">大多数人第一步就跳过了，直接上 Agent，然后花三天调一个本来不需要 Agent 的东西。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">提示词骨架：</p>
+<pre style="background:#282c34;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.65;"><code class="language-text">你是周报助手，只做一件事：把本周素材整理成周报。
+
+规则：
+1. 只使用素材里出现的事实，不补充、不推测。
+2. 输出三段：本周完成 / 进行中 / 风险与求助。
+3. 每条不超过 40 字，动词开头。
+4. 素材不足就写「素材不足：缺什么」，别编。
+
+素材：
+{{files}}</code></pre>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">交付前过一遍检查清单：</p>
+<ul style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">有没有编造素材里没有的事</li><li style="margin:0 0 6px;">有没有超过字数</li><li style="margin:0 0 6px;">有没有把「进行中」写成「已完成」</li></ul>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;">第三条是重灾区。模型天然倾向于把话说圆满，你不明确禁止，它就会替你宣布完工。</p>
+<h3 style="font-size:18px;font-weight:700;line-height:1.5;margin:26px 0 10px;color:#111;">今日三句话</h3>
+<ol style="margin:0 0 18px;padding-left:24px;font-size:16px;line-height:1.9;color:#333;"><li style="margin:0 0 6px;">Agent = 模型 + 工具 + 记忆 + 循环。<strong style="font-weight:700;color:#111;">决定权在谁手里</strong>，是它和聊天机器人的分界线。</li><li style="margin:0 0 6px;">循环里最重要的不是「想得聪明」，而是「停得下来、错得回来」。</li><li style="margin:0 0 6px;">上下文、工具、记忆、评估，做好任何一件效果都立竿见影；只调提示词，收益最小。</li></ol>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">明日预告</strong>：工具调用的三种典型失败——选错工具、参数幻觉、连环调用，以及怎么用 schema 把它们堵住。</p>
+<p style="margin:0 0 18px;font-size:16px;line-height:1.9;color:#333;letter-spacing:.2px;"><strong style="font-weight:700;color:#111;">互动</strong>：你现在用 Agent 做得最顺手的一件事是什么？回「agent」，看这一期的完整清单。</p></section><hr style="border:none;border-top:1px solid #eee;margin:28px 0 18px;"><p style="margin:0;font-size:13px;line-height:1.9;color:#9a9a9a;">喜欢今天的内容，点个「在看」；回复「agent」可以随时取回这一期的完整清单。<br>—— 知识小站　每日一篇，把 Agent 拆开看</p>
+</div></body></html>
